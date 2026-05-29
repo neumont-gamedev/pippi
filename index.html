@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sprite Packer</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <h1>Sprite Packer</h1>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="buildButton" type="button">Build Atlas</button>
+          <a id="downloadLink" class="download disabled" download="sprite-atlas.png">Download PNG</a>
+          <button id="themeToggle" class="icon-button" type="button" aria-label="Toggle light mode">☾</button>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <aside class="settings-panel" aria-label="Sprite packer controls">
+          <section class="settings-section">
+            <h2>Image Source</h2>
+            <label class="folder-control">
+              <span class="folder-button">Choose Folder</span>
+              <input
+                id="folderInput"
+                type="file"
+                accept="image/png,image/jpeg,image/gif,image/webp,image/bmp,image/svg+xml"
+                webkitdirectory
+                multiple
+              />
+            </label>
+          </section>
+
+          <section class="settings-section">
+            <h2>Grid Settings</h2>
+            <label class="field-row" for="columnsInput">
+              <span>Columns</span>
+              <input id="columnsInput" type="number" min="1" value="8" />
+            </label>
+
+            <label class="field-row" for="paddingInput">
+              <span>Padding</span>
+              <input id="paddingInput" type="number" min="0" value="0" />
+            </label>
+
+            <label class="field-row" for="cellModeInput">
+              <span>Cell Size</span>
+              <select id="cellModeInput">
+                <option value="majority" selected>Majority</option>
+                <option value="largest">Largest</option>
+                <option value="manual">Manual</option>
+              </select>
+            </label>
+
+            <label class="field-row manual-size" for="manualWidthInput" hidden>
+              <span>Width</span>
+              <input id="manualWidthInput" type="number" min="1" value="128" />
+            </label>
+
+            <label class="field-row manual-size" for="manualHeightInput" hidden>
+              <span>Height</span>
+              <input id="manualHeightInput" type="number" min="1" value="128" />
+            </label>
+
+            <label class="field-row" for="outlierModeInput">
+              <span>Outliers</span>
+              <select id="outlierModeInput">
+                <option value="crop" selected>Crop to cell</option>
+                <option value="skip">Skip</option>
+                <option value="keep">Keep largest</option>
+              </select>
+            </label>
+
+            <label class="checkbox-control" for="trimInput">
+              <input id="trimInput" type="checkbox" />
+              <span>Trim transparent edges</span>
+            </label>
+
+            <div class="field-row inline-field">
+              <label class="checkbox-control" for="gridInput">
+                <input id="gridInput" type="checkbox" />
+                <span>Grid</span>
+              </label>
+              <label class="color-control compact-color" for="gridColorInput">
+                <span>Grid color</span>
+                <input id="gridColorInput" type="color" value="#00a3ff" />
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-section">
+            <h2>Export Options</h2>
+            <label class="field-row" for="exportBgModeInput">
+              <span>Export Background</span>
+              <select id="exportBgModeInput">
+                <option value="transparent" selected>Transparent</option>
+                <option value="filled">Filled</option>
+              </select>
+            </label>
+
+            <label class="field-row color-row" for="exportBgColorInput">
+              <span>Export Color</span>
+              <input id="exportBgColorInput" type="color" value="#ffffff" />
+            </label>
+          </section>
+
+          <section class="settings-section">
+            <h2>Preview Options</h2>
+            <label class="field-row" for="previewBgModeInput">
+              <span>Preview Background</span>
+              <select id="previewBgModeInput">
+                <option value="checker" selected>Checker</option>
+                <option value="solid">Solid</option>
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </label>
+
+            <label class="field-row color-row" for="previewBgColorInput">
+              <span>Preview Color</span>
+              <input id="previewBgColorInput" type="color" value="#ffffff" />
+            </label>
+          </section>
+        </aside>
+
+        <section class="atlas-panel">
+          <section class="status-panel" aria-live="polite">
+            <div>
+              <span class="label">Selected</span>
+              <strong id="fileCount">0 images</strong>
+            </div>
+            <div>
+              <span class="label">Cell</span>
+              <strong id="cellSize">-</strong>
+            </div>
+            <div>
+              <span class="label">Atlas</span>
+              <strong id="atlasSize">-</strong>
+            </div>
+            <div>
+              <span class="label">Outliers</span>
+              <strong id="outlierCount">-</strong>
+            </div>
+          </section>
+
+          <div class="atlas-pane">
+            <div class="atlas-viewport">
+              <div id="emptyState" class="empty-state">
+                <h2>Select a folder to begin</h2>
+                <p>PNG, JPG, GIF, WebP, BMP, and SVG files will be packed into a single grid image.</p>
+              </div>
+              <div id="atlasFrame" class="atlas-frame" hidden>
+                <canvas id="atlasCanvas"></canvas>
+                <canvas id="highlightCanvas"></canvas>
+              </div>
+            </div>
+
+            <div class="zoom-bar">
+              <span>Zoom</span>
+              <button id="zoomOutButton" class="zoom-button" type="button" aria-label="Zoom out">−</button>
+              <input
+                id="zoomInput"
+                type="range"
+                min="-4"
+                max="4"
+                step="0.25"
+                value="0"
+                aria-label="Atlas zoom"
+              />
+              <button id="zoomInButton" class="zoom-button" type="button" aria-label="Zoom in">+</button>
+              <button id="zoomResetButton" class="zoom-button ratio-button" type="button">1:1</button>
+              <strong id="zoomValue">100%</strong>
+            </div>
+          </div>
+        </section>
+
+        <aside class="inspector" aria-label="Sprite inspector">
+          <div class="inspector-header">
+            <div>
+              <span class="label">Preview</span>
+              <span id="inspectorMode" class="inspector-mode">Live</span>
+              <strong id="inspectorName">No sprite selected</strong>
+            </div>
+            <label class="color-control" for="inspectorBgInput">
+              <span>Background</span>
+              <input id="inspectorBgInput" type="color" value="#ffffff" />
+            </label>
+          </div>
+
+          <div id="inspectorStage" class="inspector-stage">
+            <canvas id="inspectorCanvas" width="256" height="256"></canvas>
+          </div>
+
+          <dl class="inspector-meta">
+            <div>
+              <dt>Tile</dt>
+              <dd id="inspectorTile">-</dd>
+            </div>
+            <div>
+              <dt>Source</dt>
+              <dd id="inspectorSize">-</dd>
+            </div>
+          </dl>
+
+          <section class="order-panel" aria-label="Sprite order">
+            <div class="order-header">
+              <div>
+                <span class="label">Atlas Order</span>
+                <strong id="orderCount">0 sprites</strong>
+              </div>
+            </div>
+            <ol id="orderList" class="order-list"></ol>
+          </section>
+
+          <section class="removed-panel" aria-label="Removed sprites">
+            <div class="order-header">
+              <div>
+                <span class="label">Removed</span>
+                <strong id="removedCount">0 sprites</strong>
+              </div>
+            </div>
+            <ol id="removedList" class="order-list removed-list"></ol>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
